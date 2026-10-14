@@ -1,6 +1,6 @@
 # eslint-plugin-custom-rule
 
-ESLint **7.29.0** 기준 커스텀 룰 플러그인.
+ESLint **7.29.0** 기준 커스텀 룰 플러그인. 패키지 매니저는 Yarn Classic (1.22.x).
 
 ## 구조
 
@@ -16,11 +16,11 @@ playground/           # 실제 코드에 룰을 적용해보는 샌드박스
 ## 개발
 
 ```bash
-npm install
-npm test             # 룰 테스트
-npm run test:watch   # 테스트 watch 모드
-npm run lint         # 플러그인 코드 자체 lint (eslint-plugin-eslint-plugin)
-npm run playground   # playground/ 에 로컬 룰 적용
+yarn
+yarn test             # 룰 테스트
+yarn test:watch       # 테스트 watch 모드
+yarn lint         # 플러그인 코드 자체 lint (eslint-plugin-eslint-plugin)
+yarn playground   # playground/ 에 로컬 룰 적용
 ```
 
 새 룰 추가: `lib/rules/<name>.js` + `tests/lib/rules/<name>.test.js` + `docs/rules/<name>.md`.
@@ -29,7 +29,7 @@ npm run playground   # playground/ 에 로컬 룰 적용
 ## 외부 프로젝트에 적용
 
 ```bash
-npm install -D git+https://github.com/ysh4296/eslint-custom-rule.git
+yarn add -D git+https://github.com/ysh4296/eslint-custom-rule.git
 ```
 
 ```js
