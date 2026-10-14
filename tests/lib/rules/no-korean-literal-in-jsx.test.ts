@@ -106,6 +106,21 @@ const valid: Array<string | RuleTester.ValidTestCase> = [
     code: '<div data-testid={"테스트"} />',
     options: [{ ignoreAttributes: ["data-testid"] }],
   },
+  // 기본값: 이름이 key 로 끝나는 속성(번역 키 / React key)은 허용
+  '<Trans i18nKey="안녕하세요" />',
+  '<Button labelKey="저장" />',
+  '<Field titleKey={"이름"} placeholderKey={isNew ? "새 글" : "수정"} />',
+  '<div data-i18n-key="안녕" />',
+  '<li key="항목">{t("item")}</li>',
+  {
+    code: '<Button titleKey="저장" data-testid="테스트" />',
+    options: [{ ignoreAttributes: ["data-testid"] }], // 다른 옵션만 지정해도 기본 패턴 유지
+  },
+  // 사용자 지정 패턴
+  {
+    code: '<Button labelCode="저장" />',
+    options: [{ ignoreAttributePatterns: ["Code$"] }],
+  },
   // react-intl 의 defaultMessage 처럼 번역 원문을 담는 속성은 옵션으로 허용
   {
     code: '<FormattedMessage id="hello" defaultMessage="안녕하세요" />',
@@ -214,6 +229,23 @@ const invalid: RuleTester.InvalidTestCase[] = [
   // 컴포넌트 형태의 번역 API 는 기본적으로 일반 JSX 와 동일하게 검사된다
   { code: '<FormattedMessage id="hello" defaultMessage="안녕하세요" />', errors: [at(1, 45)] },
   { code: '<Trans i18nKey="hello">안녕하세요</Trans>', errors: [at(1, 24)] },
+
+  // key 로 "끝나는" 속성만 허용: 접두사/중간 일치는 검사
+  { code: '<input keyword="검색어" />', errors: [at(1, 16)] },
+  { code: '<Button title="저장" titleKey="저장" />', errors: [at(1, 15)] },
+  // 속성을 허용해도 자식 텍스트는 계속 검사
+  { code: '<Trans i18nKey="안녕">안녕하세요</Trans>', errors: [at(1, 21, 1, 26)] },
+  // ignoreAttributePatterns 를 지정하면 기본 패턴을 대체 (빈 배열이면 비활성화)
+  {
+    code: '<Trans i18nKey="안녕하세요" />',
+    options: [{ ignoreAttributePatterns: [] }],
+    errors: [at(1, 16)],
+  },
+  {
+    code: '<button aria-label="닫기" titleKey="저장" />',
+    options: [{ ignoreAttributePatterns: ["^aria-"] }],
+    errors: [at(1, 34)],
+  },
 
   // 요구사항 1의 예시 컴포넌트
   {

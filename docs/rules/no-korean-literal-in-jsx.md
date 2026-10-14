@@ -58,15 +58,24 @@ const message = "안녕하세요";               // JSX 바깥
 <button onClick={() => alert("저장")} />  // 함수 본문은 렌더링 값이 아님
 <div>{status === "완료" ? t("a") : t("b")}</div>
 <div style={{ fontFamily: "맑은 고딕" }} />
+<Trans i18nKey="안녕하세요" />             // 이름이 key 로 끝나는 속성
 ```
 
 ## 옵션
 
 ```js
-"custom-rule/no-korean-literal-in-jsx": ["error", { ignoreAttributes: ["data-testid"] }]
+"custom-rule/no-korean-literal-in-jsx": ["error", {
+  ignoreAttributes: ["data-testid", "defaultMessage"],
+  ignoreAttributePatterns: ["[Kk]ey$"], // 기본값
+}]
 ```
 
-- `ignoreAttributes` (`string[]`, 기본 `[]`): 검사하지 않을 JSX 속성 이름.
+- `ignoreAttributes` (`string[]`, 기본 `[]`): 검사하지 않을 JSX 속성 이름 (정확히 일치).
+- `ignoreAttributePatterns` (`string[]`, 기본 `["[Kk]ey$"]`): 검사하지 않을 JSX 속성 이름의 정규식.
+  - 기본값은 이름이 `key`로 끝나는 속성(`i18nKey`, `titleKey`, `data-i18n-key`, React `key`)을 허용한다. 번역 키나 React key는 렌더링 문자열이 아니기 때문이다.
+  - 값을 지정하면 기본값을 **대체**한다. 기본 패턴을 유지하려면 `["[Kk]ey$", ...]`처럼 함께 적고, 끄려면 `[]`를 지정한다.
+  - 문자열 속성값(`titleKey="저장"`)과 표현식 속성값(`titleKey={cond ? "가" : "나"}`) 모두에 적용된다.
+  - 속성만 허용되고 자식은 계속 검사된다: `<Trans i18nKey="안녕">안녕하세요</Trans>`의 `안녕하세요`는 오류.
 
 ## 탐지하지 못하는 케이스
 
