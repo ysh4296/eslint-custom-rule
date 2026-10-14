@@ -1,0 +1,32 @@
+{
+  "name": "eslint-plugin-custom-rule",
+  "version": "0.1.0",
+  "description": "Custom ESLint rules (ESLint 7.x)",
+  "main": "lib/index.js",
+  "files": [
+    "lib"
+  ],
+  "keywords": [
+    "eslint",
+    "eslintplugin",
+    "eslint-plugin"
+  ],
+  "scripts": {
+    "test": "mocha \"tests/**/*.test.js\"",
+    "test:watch": "mocha \"tests/**/*.test.js\" --watch",
+    "lint": "eslint lib tests",
+    "playground": "eslint --no-eslintrc -c playground/.eslintrc.js --rulesdir lib/rules --no-ignore playground"
+  },
+  "peerDependencies": {
+    "eslint": ">=7.0.0"
+  },
+  "devDependencies": {
+    "eslint": "7.29.0",
+    "eslint-plugin-eslint-plugin": "^3.6.1",
+    "mocha": "^9.2.2"
+  },
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "license": "MIT"
+}
