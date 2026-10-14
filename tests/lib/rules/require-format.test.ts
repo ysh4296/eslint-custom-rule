@@ -1,32 +1,33 @@
-"use strict";
+import assert from "assert";
+import path from "path";
+import { ESLint, Linter, RuleTester } from "eslint";
+import plugin from "../../../lib";
+import rule from "../../../lib/rules/require-format";
 
-const assert = require("assert");
-const path = require("path");
-const { ESLint, Linter, RuleTester } = require("eslint");
-const plugin = require("..");
-const rule = require("../rules/require-format");
+type Kind = "Count" | "Date";
+type TestCase = string | RuleTester.ValidTestCase;
 
 // ---------------------------------------------------------------------------
 // 공통 설정 (README 의 예시 설정과 동일)
 // ---------------------------------------------------------------------------
 
-const OPTIONS = [
-  {
-    rules: [
-      { pattern: "Count$", functions: ["formatCount", "formatNumber"], methods: ["toLocaleString"] },
-      { pattern: "Date$", functions: ["formatDate", "formatTimezone"], methods: [] },
-    ],
-  },
-];
+const FORMAT_OPTIONS = {
+  rules: [
+    { pattern: "Count$", functions: ["formatCount", "formatNumber"], methods: ["toLocaleString"] },
+    { pattern: "Date$", functions: ["formatDate", "formatTimezone"], methods: [] },
+  ],
+};
 
-const KINDS = {
+const OPTIONS = [FORMAT_OPTIONS];
+
+const KINDS: Record<Kind, { pattern: string; allowed: string }> = {
   Count: { pattern: "Count$", allowed: "formatCount(), formatNumber(), .toLocaleString()" },
   Date: { pattern: "Date$", allowed: "formatDate(), formatTimezone()" },
 };
 
 /** 포맷되지 않은 값 오류. name 은 보고된 노드의 소스 텍스트 */
-function unformatted(name, kind = "Count", column) {
-  const error = {
+function unformatted(name: string, kind: Kind = "Count", column?: number): RuleTester.TestCaseError {
+  const error: RuleTester.TestCaseError = {
     messageId: "unformatted",
     data: { name, formatter: "", ...KINDS[kind] },
   };
@@ -37,24 +38,26 @@ function unformatted(name, kind = "Count", column) {
 }
 
 /** 허용되지 않은 포맷 함수/메서드를 통과한 값 오류 */
-function invalidFormatter(name, formatter, kind = "Count") {
+function invalidFormatter(name: string, formatter: string, kind: Kind = "Count"): RuleTester.TestCaseError {
   return { messageId: "invalidFormatter", data: { name, formatter, ...KINDS[kind] } };
 }
 
 /** 모든 케이스에 공통 옵션 적용 */
-function withOptions(cases) {
+function validCases(cases: TestCase[]): RuleTester.ValidTestCase[] {
   return cases.map((testCase) =>
-    typeof testCase === "string"
-      ? { code: testCase, options: OPTIONS }
-      : { options: OPTIONS, ...testCase }
+    typeof testCase === "string" ? { code: testCase, options: OPTIONS } : { options: OPTIONS, ...testCase }
   );
+}
+
+function invalidCases(cases: RuleTester.InvalidTestCase[]): RuleTester.InvalidTestCase[] {
+  return cases.map((testCase) => ({ options: OPTIONS, ...testCase }));
 }
 
 // ---------------------------------------------------------------------------
 // 정상 사례
 // ---------------------------------------------------------------------------
 
-const valid = withOptions([
+const valid: RuleTester.ValidTestCase[] = validCases([
   // 일반 변수의 포맷 함수 호출
   "<div>{formatCount(userCount)}</div>",
   "<div>{formatNumber(userCount)}</div>",
@@ -156,14 +159,14 @@ const valid = withOptions([
   { code: "<div>{createdDate.toISOString()}</div>", options: [{ rules: [{ pattern: "Date$", methods: ["toISOString"] }] }] },
 
   // attributes 옵션: 지정하면 기본 목록을 대체
-  { code: "<span title={userCount} />", options: [{ ...OPTIONS[0], attributes: ["label"] }] },
+  { code: "<span title={userCount} />", options: [{ ...FORMAT_OPTIONS, attributes: ["label"] }] },
 ]);
 
 // ---------------------------------------------------------------------------
 // 오류 사례 (오류 개수와 보고된 값을 모두 검증)
 // ---------------------------------------------------------------------------
 
-const invalid = withOptions([
+const invalid: RuleTester.InvalidTestCase[] = invalidCases([
   // 포맷되지 않은 일반 변수
   { code: "<div>{userCount}</div>", errors: [unformatted("userCount", "Count", 7)] },
   { code: "<div>{createdDate}</div>", errors: [unformatted("createdDate", "Date", 7)] },
@@ -260,7 +263,7 @@ const invalid = withOptions([
   // attributes 옵션으로 컴포넌트 prop 을 검사 대상에 추가
   {
     code: "<Badge label={userCount} count={userCount} />",
-    options: [{ ...OPTIONS[0], attributes: ["label"] }],
+    options: [{ ...FORMAT_OPTIONS, attributes: ["label"] }],
     errors: [unformatted("userCount", "Count", 15)],
   },
   // 허용 포맷이 없는 rule 의 메시지
@@ -275,7 +278,7 @@ const invalid = withOptions([
 // 실행: espree(JSX) / @typescript-eslint/parser(TSX) / babel-eslint / Babel Optional* AST
 // ---------------------------------------------------------------------------
 
-const parserOptions = { ecmaVersion: 2020, sourceType: "module", ecmaFeatures: { jsx: true } };
+const parserOptions: Linter.ParserOptions = { ecmaVersion: 2020, sourceType: "module", ecmaFeatures: { jsx: true } };
 
 describe("require-format", () => {
   describe("espree (JSX)", () => {
@@ -291,7 +294,7 @@ describe("require-format", () => {
     tester.run("require-format", rule, { valid, invalid });
 
     tester.run("require-format (TS syntax)", rule, {
-      valid: withOptions([
+      valid: validCases([
         "<div>{(userCount as number).toLocaleString()}</div>",
         "<div>{userCount!.toLocaleString()}</div>",
         "<div>{formatCount(userCount satisfies number)}</div>",
@@ -299,7 +302,7 @@ describe("require-format", () => {
         "const userCount: number = 0; type CreatedDate = string;",
         "<Counter<number> value={userCount} />",
       ]),
-      invalid: withOptions([
+      invalid: invalidCases([
         { code: "<div>{userCount as number}</div>", errors: [unformatted("userCount")] },
         { code: "<div>{response.data!.userCount}</div>", errors: [unformatted("response.data!.userCount")] },
         { code: "<div>{createdDate satisfies string}</div>", errors: [unformatted("createdDate", "Date")] },
@@ -321,21 +324,21 @@ describe("require-format", () => {
 
   describe("Babel AST (OptionalMemberExpression / OptionalCallExpression)", () => {
     new RuleTester({
-      parser: path.join(__dirname, "fixtures/babel-optional-parser.js"),
+      parser: path.join(__dirname, "../../fixtures/babel-optional-parser.js"),
       parserOptions,
     }).run("require-format", rule, { valid, invalid });
   });
 
   describe("options schema (.eslintrc 설정 로딩 경로)", () => {
     // 일반적인 설정 로딩(ESLint 클래스 / CLI)에서는 meta.schema 로 옵션을 검증한다
-    async function lintWith(options) {
+    async function lintWith(options: unknown[]): Promise<Linter.LintMessage[]> {
       const eslint = new ESLint({
         useEslintrc: false,
-        plugins: { "format-guard": plugin },
+        plugins: { "custom-rule": plugin },
         overrideConfig: {
           parserOptions,
-          plugins: ["format-guard"],
-          rules: { "format-guard/require-format": ["error", ...options] },
+          plugins: ["custom-rule"],
+          rules: { "custom-rule/require-format": ["error", ...options] } as Linter.RulesRecord,
         },
       });
       const [result] = await eslint.lintText("<div>{userCount}</div>");
@@ -346,7 +349,7 @@ describe("require-format", () => {
       const messages = await lintWith(OPTIONS);
       assert.deepStrictEqual(
         messages.map((m) => m.ruleId),
-        ["format-guard/require-format"]
+        ["custom-rule/require-format"]
       );
     });
 
@@ -364,7 +367,7 @@ describe("require-format", () => {
       it(`rejects ${title}`, async () => {
         await assert.rejects(
           () => lintWith(options),
-          /Configuration for rule "format-guard\/require-format" is invalid/
+          /Configuration for rule "custom-rule\/require-format" is invalid/
         );
       });
     });
@@ -375,11 +378,12 @@ describe("require-format", () => {
     linter.defineRule("require-format", rule);
 
     // 잘못된 옵션이어도 ESLint 실행 중 예외를 던지지 않는다
-    [[], [{}], [{ rules: [{ pattern: "Count(" }] }], [{ rules: [{ functions: ["x"] }] }]].forEach((options) => {
+    const badOptions: unknown[][] = [[], [{}], [{ rules: [{ pattern: "Count(" }] }], [{ rules: [{ functions: ["x"] }] }]];
+    badOptions.forEach((options) => {
       it(`does not throw with ${JSON.stringify(options)}`, () => {
         const messages = linter.verify("<div>{userCount}</div>", {
           parserOptions,
-          rules: { "require-format": ["error", ...options] },
+          rules: { "require-format": ["error", ...options] } as Linter.RulesRecord,
         });
         assert.deepStrictEqual(messages, []);
       });

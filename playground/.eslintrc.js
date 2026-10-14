@@ -11,5 +11,14 @@ module.exports = {
   },
   rules: {
     "no-korean-literal-in-jsx": "error",
+    "require-format": [
+      "warn",
+      {
+        rules: [
+          { pattern: "Count$", functions: ["formatCount", "formatNumber"], methods: ["toLocaleString"] },
+          { pattern: "Date$", functions: ["formatDate", "formatTimezone"], methods: [] },
+        ],
+      },
+    ],
   },
 };

@@ -25,8 +25,11 @@ function createESLint(rules: Linter.RulesRecord): ESLint {
   });
 }
 
-async function lintSample(rules: Linter.RulesRecord): Promise<Linter.LintMessage[]> {
-  const [result] = await createESLint(rules).lintFiles([SAMPLE]);
+async function lintSample(
+  rules: Linter.RulesRecord,
+  file: string = SAMPLE
+): Promise<Linter.LintMessage[]> {
+  const [result] = await createESLint(rules).lintFiles([file]);
   return result.messages;
 }
 
@@ -64,5 +67,49 @@ describe("integration: playground/Sample.tsx", () => {
       withPlugin.filter((m) => m.ruleId !== RULE_ID),
       withoutPlugin
     );
+  });
+});
+
+describe("integration: playground/FormatGuard.tsx", () => {
+  const FORMAT_GUARD = path.join(__dirname, "../playground/FormatGuard.tsx");
+  const REQUIRE_FORMAT = "custom-rule/require-format";
+  const formatOptions = {
+    rules: [
+      { pattern: "Count$", functions: ["formatCount", "formatNumber"], methods: ["toLocaleString"] },
+      { pattern: "Date$", functions: ["formatDate", "formatTimezone"], methods: [] },
+    ],
+  };
+
+  it("reports only unformatted values rendered in JSX", async () => {
+    const messages = await lintSample({ [REQUIRE_FORMAT]: ["warn", formatOptions] }, FORMAT_GUARD);
+
+    assert.deepStrictEqual(
+      messages.map((m) => [m.ruleId, m.line, m.column, m.messageId]),
+      [
+        [REQUIRE_FORMAT, 29, 11, "unformatted"], // {userCount}
+        [REQUIRE_FORMAT, 30, 11, "unformatted"], // {response.data.user.profile.createdDate}
+        [REQUIRE_FORMAT, 31, 11, "unformatted"], // {response?.data?.userCount}
+        [REQUIRE_FORMAT, 32, 18, "invalidFormatter"], // String(userCount)
+        [REQUIRE_FORMAT, 33, 22, "invalidFormatter"], // formatDate(userCount)
+        [REQUIRE_FORMAT, 34, 40, "unformatted"], // ... + additionalCount
+        [REQUIRE_FORMAT, 35, 51, "unformatted"], // ... : totalCount
+        [REQUIRE_FORMAT, 36, 16, "unformatted"], // `총 ${userCount}명`
+      ]
+    );
+  });
+
+  it("works together with no-korean-literal-in-jsx without interference", async () => {
+    const formatOnly = await lintSample({ [REQUIRE_FORMAT]: ["warn", formatOptions] }, FORMAT_GUARD);
+    const both = await lintSample(
+      { [REQUIRE_FORMAT]: ["warn", formatOptions], [RULE_ID]: "error" },
+      FORMAT_GUARD
+    );
+
+    assert.deepStrictEqual(
+      both.filter((m) => m.ruleId === REQUIRE_FORMAT),
+      formatOnly
+    );
+    // 한글 룰은 템플릿 리터럴의 한글(`총 ...명`)을 별도로 보고한다
+    assert.ok(both.some((m) => m.ruleId === RULE_ID));
   });
 });

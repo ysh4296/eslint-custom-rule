@@ -1,6 +1,6 @@
-# eslint-plugin-format-guard
+# require-format
 
-JSX에서 **특정 이름 패턴을 가진 값**(예: `userCount`, `createdDate`)이 **포맷되지 않은 채 렌더링되는 것**을 막는 ESLint 플러그인입니다.
+JSX에서 **특정 이름 패턴을 가진 값**(예: `userCount`, `createdDate`)이 **포맷되지 않은 채 렌더링되는 것**을 막는 룰입니다. 자동 수정(fix)은 지원하지 않습니다.
 
 ```tsx
 // ❌ 경고
@@ -13,37 +13,17 @@ JSX에서 **특정 이름 패턴을 가진 값**(예: `userCount`, `createdDate`
 <div>{formatDate(createdDate)}</div>
 ```
 
-> **이 플러그인은 TypeScript 타입 분석이 아니라 "변수명 기반 컨벤션 검사"입니다.**
+> **이 룰은 TypeScript 타입 분석이 아니라 "변수명 기반 컨벤션 검사"입니다.**
 > 값의 실제 타입(`number`, `Date`)을 보지 않고, 변수명/필드명이 설정한 정규식과 일치하는지만 봅니다.
 > TypeChecker, `parserOptions.project`를 사용하지 않으며 AST만으로 동작합니다.
 
-## 지원 환경
-
-| 항목 | 지원 |
-| --- | --- |
-| ESLint | 7.x (7.29.0에서 검증) |
-| Node.js | 16 (`engines: >=12.22.0`) |
-| 설정 방식 | `.eslintrc.json` / `.eslintrc.js` 등 eslintrc |
-| 파서 | espree(JSX), `@typescript-eslint/parser`(TSX), `babel-eslint` — 기존 parser 설정을 바꿀 필요 없음 |
-| 런타임 의존성 | 없음 |
-
-## 설치
-
-```bash
-npm install -D eslint-plugin-format-guard
-# 또는
-yarn add -D eslint-plugin-format-guard
-```
-
-`eslint`(7.x)는 프로젝트에 이미 설치되어 있어야 합니다 (peerDependency).
-
-## 사용법 (`.eslintrc.json`)
+## 설정 (`.eslintrc.json`)
 
 ```json
 {
-  "plugins": ["format-guard"],
+  "plugins": ["custom-rule"],
   "rules": {
-    "format-guard/require-format": [
+    "custom-rule/require-format": [
       "warn",
       {
         "rules": [
@@ -64,7 +44,7 @@ yarn add -D eslint-plugin-format-guard
 }
 ```
 
-기존 `plugins` / `rules`에 위 항목을 **추가**하면 됩니다. parser, extends 등 다른 설정은 바꾸지 않아도 됩니다.
+기존 `plugins` / `rules`에 추가하면 됩니다. parser 등 다른 설정은 바꾸지 않아도 되고, 타입 정보(`parserOptions.project`)도 필요 없습니다.
 
 ## 옵션
 
@@ -126,7 +106,7 @@ const { userCount: value } = data; <div>{value}</div>                 // 별칭 
 <span title={userCount} />                            // 텍스트 속성
 ```
 
-전체 동작 예시는 [examples/App.tsx](examples/App.tsx)와 [examples/.eslintrc.json](examples/.eslintrc.json)을 참고하세요.
+전체 동작 예시는 [playground/FormatGuard.tsx](../../playground/FormatGuard.tsx)를 참고하세요 (`yarn playground`).
 
 ## 검사 원리 (AST)
 
@@ -160,14 +140,13 @@ ESLint는 소스 코드를 AST(추상 구문 트리)로 파싱하고, 룰이 등
 코드 구조:
 
 ```text
-index.js                    플러그인 진입점 (rules 등록)
-rules/require-format.js     옵션/스키마, 출력 위치 판별, 보고
-utils/check-expression.js   checkExpression: 값 흐름 추적
-utils/formatter.js          isAllowedFormatter: 포맷터 식별 (이름 기반)
-utils/ast.js                파서별 AST 차이 흡수 (ChainExpression / Optional* 노드 등)
+lib/rules/require-format.js     옵션/스키마, 출력 위치 판별, 보고
+lib/utils/check-expression.js   checkExpression: 값 흐름 추적
+lib/utils/formatter.js          isAllowedFormatter: 포맷터 식별 (이름 기반)
+lib/utils/ast.js                파서별 AST 차이 흡수 (ChainExpression / Optional* 노드 등)
 ```
 
-포맷터 식별은 `utils/formatter.js`에 모여 있습니다. 나중에 import 경로/심볼 검증을 추가할 때(예: `formatDate`가 `@/utils/date`에서 import된 경우만 허용) 이 파일만 확장하면 됩니다.
+포맷터 식별은 `lib/utils/formatter.js`에 모여 있습니다. 나중에 import 경로/심볼 검증을 추가할 때(예: `formatDate`가 `@/utils/date`에서 import된 경우만 허용) 이 파일만 확장하면 됩니다.
 
 ## 제한사항
 
@@ -184,49 +163,3 @@ utils/ast.js                파서별 AST 차이 흡수 (ChainExpression / Optio
 | 실제 타입 | 분석 안 함 | `userCount`가 문자열이어도 경고, 이름이 다르면 숫자여도 통과 |
 | 컴포넌트 props `<Badge count={userCount} />` | 통과 | 컴포넌트가 포맷할 수 있음. 필요하면 `attributes`에 추가 |
 | computed 키 `{data[key]}` | 통과 | 말단 이름을 정적으로 알 수 없음 |
-
-## 사내 npm Registry 배포
-
-1. 패키지 이름을 사내 스코프로 바꾸는 경우 (예: `@company/eslint-plugin-format-guard`):
-
-   ```json
-   {
-     "name": "@company/eslint-plugin-format-guard",
-     "publishConfig": { "registry": "https://npm.company.internal/" }
-   }
-   ```
-
-   스코프 패키지는 설정에서 `"plugins": ["@company/format-guard"]`, 룰 이름은 `"@company/format-guard/require-format"`이 됩니다.
-
-2. Registry 인증 (`.npmrc`):
-
-   ```ini
-   @company:registry=https://npm.company.internal/
-   //npm.company.internal/:_authToken=${NPM_TOKEN}
-   ```
-
-3. 테스트 후 배포:
-
-   ```bash
-   npm test
-   npm pack --dry-run     # 포함 파일 확인: index.js, rules/, utils/, package.json, README.md
-   npm version patch      # 버전 올리기
-   npm publish
-   ```
-
-4. 사용하는 프로젝트에서 설치:
-
-   ```bash
-   npm install -D @company/eslint-plugin-format-guard
-   ```
-
-Registry가 없는 폐쇄망에서는 `npm pack`으로 만든 `.tgz`를 옮겨 `npm install -D ./eslint-plugin-format-guard-0.1.0.tgz`로 설치할 수 있습니다. 런타임 의존성이 없어 추가 패키지 설치가 필요 없습니다.
-
-## 개발
-
-```bash
-npm install      # 또는 yarn
-npm test         # RuleTester: espree / @typescript-eslint/parser / babel-eslint / Babel Optional* AST
-npm run lint
-npm run example  # examples/.eslintrc.json 으로 examples/App.tsx 검사
-```

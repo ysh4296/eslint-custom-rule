@@ -8,10 +8,12 @@ ESLint **7.29.0** 기준 커스텀 룰 플러그인. 패키지 매니저는 Yarn
 lib/
   index.js            # lib/rules/*.js 자동 등록
   rules/<rule>.js     # 룰 구현
+  utils/              # 룰 공용 AST 유틸 (require-format 의 값 흐름 추적 / 포맷터 판별)
 tests/lib/rules/      # RuleTester + mocha 테스트 (TypeScript, ts-node 로 실행)
 docs/rules/<rule>.md  # 룰 문서
 playground/           # 실제 코드에 룰을 적용해보는 샌드박스 (TSX)
 tests/integration.test.ts  # 플러그인 이름으로 등록해 playground 를 lint 하는 통합 테스트
+tests/fixtures/       # 테스트용 파서 (Babel Optional* AST 재현)
 ```
 
 ## 룰 목록
@@ -19,12 +21,8 @@ tests/integration.test.ts  # 플러그인 이름으로 등록해 playground 를 
 | 룰 | 설명 |
 | --- | --- |
 | [no-korean-literal-in-jsx](docs/rules/no-korean-literal-in-jsx.md) | JSX에서 직접 렌더링되는 한글 하드코딩 문자열 금지 |
+| [require-format](docs/rules/require-format.md) | 설정한 이름 패턴(`Count$`, `Date$` 등)의 값을 허용된 함수/메서드로 포맷한 뒤 JSX에 렌더링하도록 강제 |
 
-## 별도 패키지
-
-| 패키지 | 설명 |
-| --- | --- |
-| [eslint-plugin-format-guard](eslint-plugin-format-guard/README.md) | 설정한 이름 패턴의 값이 허용된 함수/메서드로 포맷되었는지 검사 (`format-guard/require-format`). 자체 package.json/테스트를 가진 독립 npm 패키지 |
 
 ## 개발
 
@@ -52,6 +50,12 @@ module.exports = {
   plugins: ["custom-rule"],
   rules: {
     "custom-rule/no-korean-literal-in-jsx": "error",
+    "custom-rule/require-format": ["warn", {
+      rules: [
+        { pattern: "Count$", functions: ["formatCount"], methods: ["toLocaleString"] },
+        { pattern: "Date$", functions: ["formatDate"] },
+      ],
+    }],
   },
 };
 ```
