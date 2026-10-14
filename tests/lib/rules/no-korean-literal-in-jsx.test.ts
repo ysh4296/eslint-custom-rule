@@ -47,6 +47,27 @@ const valid: Array<string | RuleTester.ValidTestCase> = [
   '<div>{i18n.t("안녕하세요")}</div>',
   '<input placeholder={t("이름을 입력하세요")} />',
 
+  // 번역 함수 호출이 렌더링 경로(조건식/논리식/템플릿/연결/배열/메서드 체인) 안에 있는 경우
+  '<div>{cond ? t("활성") : t("비활성")}</div>',
+  '<div>{name || t("이름 없음")}</div>',
+  '<div>{name ?? t("없음")}</div>',
+  '<div>{isActive && t("활성")}</div>',
+  '<div>{`${t("안녕하세요")}, ${name}`}</div>',
+  '<div>{t("안녕") + name}</div>',
+  '<div>{[t("사과"), t("바나나")].join(", ")}</div>',
+  '<div>{t("안녕").toUpperCase()}</div>',
+  '<input placeholder={isNew ? t("새 글") : t("수정")} />',
+
+  // 번역 함수 호출 형태 변형
+  '<div>{t("welcome", { name: "홍길동" })}</div>', // 보간 옵션
+  '<div>{t("save", "저장")}</div>', // 기본값 인수
+  '<div>{t(isNew ? "새 글" : "수정")}</div>', // 인수 내부의 조건식
+  '<div>{t?.("안녕")}</div>', // optional call
+  '<div>{i18n?.t("안녕")}</div>',
+  "<div>{t`안녕하세요`}</div>", // tagged template
+  '<div>{intl.formatMessage({ id: "hello", defaultMessage: "안녕하세요" })}</div>',
+  'function C() { const { t } = useTranslation(); return <div title={t("제목")}>{t("본문")}</div>; }',
+
   // JSX 주석 / 일반 코드 주석
   "<div>{/* 안녕하세요 */}</div>",
   "<div>\n  {/* 주석: 저장 버튼 */}\n  {t('save')}\n</div>",
@@ -84,6 +105,11 @@ const valid: Array<string | RuleTester.ValidTestCase> = [
   {
     code: '<div data-testid={"테스트"} />',
     options: [{ ignoreAttributes: ["data-testid"] }],
+  },
+  // react-intl 의 defaultMessage 처럼 번역 원문을 담는 속성은 옵션으로 허용
+  {
+    code: '<FormattedMessage id="hello" defaultMessage="안녕하세요" />',
+    options: [{ ignoreAttributes: ["defaultMessage"] }],
   },
 
   // 정의상 한글 "음절"(가-힣)만 검사한다. 자모만 있는 문자열은 대상이 아님
@@ -177,6 +203,18 @@ const invalid: RuleTester.InvalidTestCase[] = [
     errors: [at(1, 11), at(1, 22), at(1, 28)],
   },
 
+  // 번역 함수와 하드코딩 문자열이 섞인 경우: 번역 함수 쪽은 허용, 하드코딩 쪽만 보고
+  { code: '<div>{cond ? t("가") : "나"}</div>', errors: [at(1, 23, 1, 26)] },
+  { code: '<div>{t("hello") + "님"}</div>', errors: [at(1, 20)] },
+  { code: '<div>{t("hello")}님</div>', errors: [at(1, 18, 1, 19)] },
+  { code: '<div>{`${t("hello")}님`}</div>', errors: [at(1, 7)] },
+  { code: '<div>{[t("a"), "나"]}</div>', errors: [at(1, 16)] },
+  { code: '<p title={t("x") || "제목 없음"} />', errors: [at(1, 21)] },
+
+  // 컴포넌트 형태의 번역 API 는 기본적으로 일반 JSX 와 동일하게 검사된다
+  { code: '<FormattedMessage id="hello" defaultMessage="안녕하세요" />', errors: [at(1, 45)] },
+  { code: '<Trans i18nKey="hello">안녕하세요</Trans>', errors: [at(1, 24)] },
+
   // 요구사항 1의 예시 컴포넌트
   {
     code: [
@@ -233,6 +271,9 @@ describe("no-korean-literal-in-jsx", () => {
         'enum Status { Done = "완료" }',
         '<Select<"저장" | "취소"> value={value} />', // 타입 인수의 문자열 리터럴 타입
         "<div>{label as string}</div>",
+        '<div>{t<string>("안녕")}</div>', // 제네릭 호출
+        '<input placeholder={t("이름") as string} />',
+        '<div>{t("안녕")!}</div>',
         "<div>{user!.name}</div>",
         'const C = (): JSX.Element => <div>{t("hello") satisfies string}</div>;',
         'function Generic<T>(props: { items: T[] }) { const empty = "없음"; return <ul>{props.items.length}</ul>; }',
