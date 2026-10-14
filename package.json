@@ -15,15 +15,17 @@
     "test": "mocha \"tests/**/*.test.js\"",
     "test:watch": "mocha \"tests/**/*.test.js\" --watch",
     "lint": "eslint lib tests",
-    "playground": "eslint --no-eslintrc -c playground/.eslintrc.js --rulesdir lib/rules --no-ignore playground"
+    "playground": "eslint --no-eslintrc -c playground/.eslintrc.js --rulesdir lib/rules --no-ignore --ext .js,.jsx,.ts,.tsx playground"
   },
   "peerDependencies": {
     "eslint": ">=7.0.0"
   },
   "devDependencies": {
+    "@typescript-eslint/parser": "5.62.0",
     "eslint": "7.29.0",
     "eslint-plugin-eslint-plugin": "^3.6.1",
-    "mocha": "^9.2.2"
+    "mocha": "^9.2.2",
+    "typescript": "4.9.5"
   },
   "engines": {
     "node": ">=12.0.0"
