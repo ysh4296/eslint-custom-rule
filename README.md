@@ -17,8 +17,8 @@ playground/           # 실제 코드에 룰을 적용해보는 샌드박스
 
 ```bash
 yarn
-yarn test             # 룰 테스트
-yarn test:watch       # 테스트 watch 모드
+yarn test         # 룰 테스트
+yarn test:watch   # 테스트 watch 모드
 yarn lint         # 플러그인 코드 자체 lint (eslint-plugin-eslint-plugin)
 yarn playground   # playground/ 에 로컬 룰 적용
 ```
