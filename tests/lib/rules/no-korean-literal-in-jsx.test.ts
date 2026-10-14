@@ -1,13 +1,16 @@
-"use strict";
-
-const { RuleTester } = require("eslint");
-const rule = require("../../../lib/rules/no-korean-literal-in-jsx");
+import { Linter, RuleTester } from "eslint";
+import rule from "../../../lib/rules/no-korean-literal-in-jsx";
 
 const MESSAGE_ID = "noKoreanLiteral";
 
 /** 오류 위치 헬퍼: (line, column, endLine, endColumn) */
-function at(line, column, endLine, endColumn) {
-  const error = { messageId: MESSAGE_ID, line, column };
+function at(
+  line: number,
+  column: number,
+  endLine?: number,
+  endColumn?: number
+): RuleTester.TestCaseError {
+  const error: RuleTester.TestCaseError = { messageId: MESSAGE_ID, line, column };
   if (endLine !== undefined) {
     error.endLine = endLine;
     error.endColumn = endColumn;
@@ -15,7 +18,7 @@ function at(line, column, endLine, endColumn) {
   return error;
 }
 
-const valid = [
+const valid: Array<string | RuleTester.ValidTestCase> = [
   // 영문 / 숫자 JSXText
   "<div>Hello World</div>",
   "<div>12345</div>",
@@ -87,7 +90,7 @@ const valid = [
   "<div>ㅋㅋ</div>",
 ];
 
-const invalid = [
+const invalid: RuleTester.InvalidTestCase[] = [
   // 한글 JSXText
   { code: "<div>안녕하세요</div>", errors: [at(1, 6, 1, 11)] },
   { code: "<>안녕</>", errors: [at(1, 3, 1, 5)] },
@@ -198,7 +201,7 @@ const invalid = [
   },
 ];
 
-const jsxParserOptions = {
+const jsxParserOptions: Linter.ParserOptions = {
   ecmaVersion: 2020,
   sourceType: "module",
   ecmaFeatures: { jsx: true },

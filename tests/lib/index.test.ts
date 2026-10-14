@@ -1,7 +1,5 @@
-"use strict";
-
-const assert = require("assert");
-const plugin = require("../../lib");
+import assert from "assert";
+import plugin from "../../lib";
 
 describe("plugin index", () => {
   it("exports every rule in lib/rules", () => {

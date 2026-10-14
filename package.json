@@ -12,19 +12,24 @@
     "eslint-plugin"
   ],
   "scripts": {
-    "test": "mocha \"tests/**/*.test.js\"",
-    "test:watch": "mocha \"tests/**/*.test.js\" --watch",
-    "lint": "eslint lib tests",
+    "test": "yarn typecheck && mocha",
+    "test:watch": "mocha --watch --watch-files lib,tests",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint --ext .js,.ts lib tests",
     "playground": "eslint --no-eslintrc -c playground/.eslintrc.js --rulesdir lib/rules --no-ignore --ext .js,.jsx,.ts,.tsx playground"
   },
   "peerDependencies": {
     "eslint": ">=7.0.0"
   },
   "devDependencies": {
+    "@types/eslint": "7.29.0",
+    "@types/mocha": "9.1.1",
+    "@types/node": "16.18.126",
     "@typescript-eslint/parser": "5.62.0",
     "eslint": "7.29.0",
     "eslint-plugin-eslint-plugin": "^3.6.1",
     "mocha": "^9.2.2",
+    "ts-node": "10.9.2",
     "typescript": "4.9.5"
   },
   "engines": {
