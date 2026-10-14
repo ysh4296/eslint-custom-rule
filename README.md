@@ -20,6 +20,12 @@ tests/integration.test.ts  # 플러그인 이름으로 등록해 playground 를 
 | --- | --- |
 | [no-korean-literal-in-jsx](docs/rules/no-korean-literal-in-jsx.md) | JSX에서 직접 렌더링되는 한글 하드코딩 문자열 금지 |
 
+## 별도 패키지
+
+| 패키지 | 설명 |
+| --- | --- |
+| [eslint-plugin-format-guard](eslint-plugin-format-guard/README.md) | 설정한 이름 패턴의 값이 허용된 함수/메서드로 포맷되었는지 검사 (`format-guard/require-format`). 자체 package.json/테스트를 가진 독립 npm 패키지 |
+
 ## 개발
 
 ```bash
