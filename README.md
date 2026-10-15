@@ -8,7 +8,7 @@ ESLint **7.29.0** 기준 커스텀 룰 플러그인. 패키지 매니저는 Yarn
 lib/
   index.js            # lib/rules/*.js 자동 등록
   rules/<rule>.js     # 룰 구현
-  utils/              # 룰 공용 AST 유틸 (require-format 의 값 흐름 추적 / 포맷터 판별, zustand import 추적)
+  utils/              # 룰 공용 AST 유틸 (require-format 의 값 흐름 추적 / 포맷터 판별, zustand import 추적, 스코프 탐색)
 tests/lib/rules/      # RuleTester + mocha 테스트 (TypeScript, ts-node 로 실행)
 docs/rules/<rule>.md  # 룰 문서
 playground/           # 실제 코드에 룰을 적용해보는 샌드박스 (TSX)
@@ -21,6 +21,7 @@ tests/fixtures/       # 테스트용 파서 (Babel Optional* AST 재현)
 | 룰 | 설명 |
 | --- | --- |
 | [no-korean-literal-in-jsx](docs/rules/no-korean-literal-in-jsx.md) | JSX에서 직접 렌더링되는 한글 하드코딩 문자열 금지 |
+| [no-unstable-hook-return](docs/rules/no-unstable-hook-return.md) | 커스텀 훅이 렌더링마다 새로 생성되는 함수(useCallback 미사용)를 반환하는 것 금지 |
 | [require-format](docs/rules/require-format.md) | 설정한 이름 패턴(`Count$`, `Date$` 등)의 값을 허용된 함수/메서드로 포맷한 뒤 JSX에 렌더링하도록 강제 |
 | [zustand-store-naming](docs/rules/zustand-store-naming.md) | Zustand `create()`로 선언한 스토어 훅의 이름을 패턴(`useXStore`)으로 강제 |
 | [zustand-require-shallow](docs/rules/zustand-require-shallow.md) | Zustand 스토어 훅을 selector + `zustand/shallow`의 `shallow`와 함께 호출하도록 강제 |
@@ -52,6 +53,7 @@ module.exports = {
   plugins: ["custom-rule"],
   rules: {
     "custom-rule/no-korean-literal-in-jsx": "error",
+    "custom-rule/no-unstable-hook-return": "warn",
     "custom-rule/require-format": ["warn", {
       rules: [
         { pattern: "Count$", functions: ["formatCount"], methods: ["toLocaleString"] },
