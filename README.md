@@ -24,7 +24,7 @@ tests/fixtures/       # 테스트용 파서 (Babel Optional* AST 재현)
 | [no-unstable-hook-return](docs/rules/no-unstable-hook-return.md) | 커스텀 훅이 렌더링마다 새로 생성되는 함수(useCallback 미사용)를 반환하는 것 금지 |
 | [require-format](docs/rules/require-format.md) | 설정한 이름 패턴(`Count$`, `Date$` 등)의 값을 허용된 함수/메서드로 포맷한 뒤 JSX에 렌더링하도록 강제 |
 | [zustand-store-naming](docs/rules/zustand-store-naming.md) | Zustand `create()`로 선언한 스토어 훅의 이름을 패턴(`useXStore`)으로 강제 |
-| [zustand-require-shallow](docs/rules/zustand-require-shallow.md) | Zustand 스토어 훅을 selector + `zustand/shallow`의 `shallow`와 함께 호출하도록 강제 |
+| [zustand-require-shallow](docs/rules/zustand-require-shallow.md) | Zustand 스토어 훅을 `useShallow(selector)` 또는 selector + `zustand/shallow`의 `shallow`와 함께 호출하도록 강제 |
 
 
 ## 개발

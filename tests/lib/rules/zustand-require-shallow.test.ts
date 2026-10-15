@@ -7,6 +7,7 @@ import rule from "../../../lib/rules/zustand-require-shallow";
 const STORE = 'import { useUserStore } from "./stores";\n';
 const SHALLOW = 'import { shallow } from "zustand/shallow";\n';
 const IMPORTS = STORE + SHALLOW;
+const USE_SHALLOW = 'import { useShallow } from "zustand/react/shallow";\n';
 // 같은 파일에서 create() 로 선언한 스토어
 const LOCAL_STORE = 'import { create } from "zustand";\nconst useProductStore = create(() => ({ products: [] }));\n';
 
@@ -27,6 +28,15 @@ function missingSelector(name = "useUserStore"): RuleTester.TestCaseError {
 // ---------------------------------------------------------------------------
 
 const valid: (string | RuleTester.ValidTestCase)[] = [
+  // useShallow(selector)
+  STORE + USE_SHALLOW + "const user = useUserStore(useShallow((s) => ({ name: s.name, age: s.age })));",
+  STORE + USE_SHALLOW + "const [a, b] = useUserStore(useShallow((s) => [s.a, s.b]));",
+  STORE + 'import { useShallow } from "zustand/shallow"; useUserStore(useShallow((s) => s.a));',
+  STORE + 'import { useShallow as pick } from "zustand/react/shallow"; useUserStore(pick((s) => s.a));',
+  STORE + 'import * as zs from "zustand/react/shallow"; useUserStore(zs.useShallow((s) => s.a));',
+  LOCAL_STORE + USE_SHALLOW + "useProductStore(useShallow((s) => s.products));",
+  STORE + USE_SHALLOW + SHALLOW + "useUserStore(useShallow((s) => s.a), shallow);",
+
   // selector + shallow: 단일 원시값 / 객체 / 배열
   IMPORTS + "const count = useUserStore((state) => state.count, shallow);",
   IMPORTS + "const user = useUserStore((state) => ({ name: state.name, age: state.age }), shallow);",
@@ -136,10 +146,25 @@ const invalid: RuleTester.InvalidTestCase[] = [
     code: IMPORTS + "function C() { const shallow = (a, b) => a === b; return useUserStore((s) => s.a, shallow); }",
     errors: [invalidEqualityFn("shallow")],
   },
+  // useShallow: zustand 에서 import 한 것만, selector 와 함께 호출한 경우만 허용
   {
-    // useShallow 는 초기 버전에서 허용하지 않음
-    code: STORE + 'import { useShallow } from "zustand/shallow"; useUserStore(useShallow((s) => ({ a: s.a })));',
+    code: STORE + 'import { useShallow } from "./utils/shallow"; useUserStore(useShallow((s) => ({ a: s.a })));',
     errors: [missingShallow()],
+  },
+  {
+    code: STORE + "function useShallow(fn) { return fn; }\nuseUserStore(useShallow((s) => ({ a: s.a })));",
+    errors: [missingShallow()],
+  },
+  {
+    code: STORE + USE_SHALLOW + "function C(useShallow) { return useUserStore(useShallow((s) => s.a)); }",
+    errors: [missingShallow()],
+  },
+  { code: STORE + USE_SHALLOW + "useUserStore(useShallow());", errors: [missingShallow()] },
+  { code: STORE + USE_SHALLOW + "useUserStore(useShallow);", errors: [missingShallow()] },
+  { code: STORE + 'import { shallow } from "zustand/shallow"; useUserStore(shallow((s) => s.a));', errors: [missingShallow()] },
+  {
+    code: STORE + USE_SHALLOW + "useUserStore(useShallow((s) => ({ a: s.a })), Object.is);",
+    errors: [invalidEqualityFn("Object.is")],
   },
 
   // import alias: 원래 export 이름 또는 로컬 이름이 패턴과 일치하면 검사

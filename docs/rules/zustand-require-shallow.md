@@ -1,13 +1,15 @@
 # zustand-require-shallow
 
-Zustand(4.5.x) 스토어 훅을 사용할 때 **selector와 함께 `zustand/shallow`의 `shallow`를 전달하도록** 강제하는 룰입니다. 자동 수정(fix)은 지원하지 않습니다.
+Zustand(4.5.x) 스토어 훅을 사용할 때 **selector를 `useShallow`로 감싸거나, selector와 함께 `zustand/shallow`의 `shallow`를 전달하도록** 강제하는 룰입니다. 자동 수정(fix)은 지원하지 않습니다.
 
 ```tsx
 import { shallow } from "zustand/shallow";
+import { useShallow } from "zustand/react/shallow";
 
 // ✅ 정상
 const count = useUserStore((state) => state.count, shallow);
 const user = useUserStore((state) => ({ name: state.name, age: state.age }), shallow);
+const user2 = useUserStore(useShallow((state) => ({ name: state.name, age: state.age })));
 
 // ❌ 경고
 const count = useUserStore((state) => state.count);              // shallow 누락
@@ -67,7 +69,7 @@ const state = useUserStore();                                     // selector �
 | --- | --- |
 | `useX()` | `missingSelector` (`allowNoSelector: true`이면 허용) |
 | `useX(selector)` | `missingShallow` |
-| `useX(useShallow(selector))` | `missingShallow` (초기 버전에서는 `useStore(selector, shallow)` 형태만 허용) |
+| `useX(useShallow(selector))` | ✅ 단, `useShallow`가 **`zustand/react/shallow` 또는 `zustand/shallow`의 import를 실제로 참조**할 때만 (alias, namespace import 포함) |
 | `useX(selector, 다른 함수)` | `invalidEqualityFn` |
 | `useX(selector, shallow)` | ✅ 단, `shallow`가 **`zustand/shallow`의 named import를 실제로 참조**할 때만 |
 | `useX(...args)` | 검사하지 않음 (인자를 정적으로 알 수 없음) |
@@ -123,7 +125,7 @@ Zustand **v4.4부터** `zustand`의 `create`로 만든 훅에 두 번째 인자(
 They can be imported from 'zustand/traditional'.
 ```
 
-동작은 그대로 하지만 이 컨벤션을 따르면 콘솔 경고가 나옵니다. 경고 없이 쓰려면 스토어를 `zustand/traditional`의 `createWithEqualityFn`으로 만드세요. 이 룰과 `zustand-store-naming` 모두 `createWithEqualityFn`을 스토어 생성 함수로 인식합니다.
+동작은 그대로 하지만 이 컨벤션을 따르면 콘솔 경고가 나옵니다. 경고 없이 쓰려면 `useX(useShallow(selector))` 형태를 쓰거나(이 룰이 허용), 스토어를 `zustand/traditional`의 `createWithEqualityFn`으로 만드세요. 이 룰과 `zustand-store-naming` 모두 `createWithEqualityFn`을 스토어 생성 함수로 인식합니다.
 
 ```tsx
 import { createWithEqualityFn } from "zustand/traditional";
@@ -132,4 +134,4 @@ import { shallow } from "zustand/shallow";
 export const useUserStore = createWithEqualityFn<UserState>()((set) => ({ count: 0 }), shallow);
 ```
 
-Zustand v5에서는 `create`의 equality 함수 인자가 제거되었으므로, v5로 올릴 때는 `useShallow` 기반으로 룰을 바꿔야 합니다.
+Zustand v5에서는 `create`의 equality 함수 인자가 제거되었으므로, v5로 올릴 때는 `useX(selector, shallow)` 허용을 빼고 `useShallow` 형태만 허용하도록 룰을 바꿔야 합니다.
