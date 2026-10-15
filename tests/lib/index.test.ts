@@ -6,6 +6,8 @@ describe("plugin index", () => {
     assert.deepStrictEqual(Object.keys(plugin.rules).sort(), [
       "no-korean-literal-in-jsx",
       "require-format",
+      "zustand-require-shallow",
+      "zustand-store-naming",
     ]);
   });
 });
