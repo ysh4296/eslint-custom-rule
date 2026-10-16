@@ -127,14 +127,25 @@ const valid: Array<string | RuleTester.ValidTestCase> = [
     options: [{ ignoreAttributes: ["defaultMessage"] }],
   },
 
-  // 정의상 한글 "음절"(가-힣)만 검사한다. 자모만 있는 문자열은 대상이 아님
-  "<div>ㅋㅋ</div>",
+  // 한글이 없는 문자열 (한자 / 일본어 / 전각 기호)
+  "<div>漢字 カタカナ ＡＢＣ</div>",
 ];
 
 const invalid: RuleTester.InvalidTestCase[] = [
   // 한글 JSXText
   { code: "<div>안녕하세요</div>", errors: [at(1, 6, 1, 11)] },
   { code: "<>안녕</>", errors: [at(1, 3, 1, 5)] },
+
+  // 자모만 있는 문자열 (자음 / 모음 / 옛 자모 / NFD 로 분해된 한글)
+  { code: "<div>ㅋㅋ</div>", errors: [at(1, 6, 1, 8)] },
+  { code: "<div>ㅏㅏ</div>", errors: [at(1, 6, 1, 8)] },
+  { code: "<div>ok ㄱ</div>", errors: [at(1, 6, 1, 10)] },
+  { code: "<div>ㆍ</div>", errors: [at(1, 6, 1, 7)] },
+  { code: "<div>\u1112\u1161\u11ab</div>", errors: [at(1, 6, 1, 9)] },
+  { code: '<button title="ㅠㅠ" />', errors: [at(1, 15, 1, 19)] },
+  { code: '<div>{"ㅎㅇ"}</div>', errors: [at(1, 7, 1, 11)] },
+  { code: "<div>{`ㅋ ${name}`}</div>", errors: [at(1, 7)] },
+  { code: '<div>{isActive ? "ㅇㅇ" : "ㄴㄴ"}</div>', errors: [at(1, 18), at(1, 25)] },
 
   // 한글 JSXAttribute (문자열 속성값)
   { code: '<input placeholder="이름을 입력하세요" />', errors: [at(1, 20, 1, 31)] },
